@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><title>Map Preview — 10_Ruins_Lobby</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #12121e; color: #d8d8e8;
+  font-family: Consolas, 'Courier New', monospace;
+  display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+#topbar { display: flex; align-items: center; gap: 10px; padding: 7px 14px;
+  background: #1c1c30; border-bottom: 1px solid #2e2e48; flex-shrink: 0; }
+#title { font-size: 14px; font-weight: bold; color: #9ab0ff; flex: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#stats { font-size: 11px; color: #556; white-space: nowrap; }
+#toolbar { display: flex; align-items: center; gap: 5px; padding: 5px 12px;
+  background: #161626; border-bottom: 1px solid #252538;
+  flex-shrink: 0; flex-wrap: wrap; }
+.btn { background: #222238; color: #bbc; border: 1px solid #3a3a56; padding: 3px 9px;
+  border-radius: 4px; cursor: pointer; font-size: 12px; font-family: inherit;
+  white-space: nowrap; line-height: 20px; }
+.btn:hover { background: #2e2e50; }
+.btn.on { background: #2c2c56; border-color: #5060a0; color: #cce; }
+#zdsp { font-size: 12px; color: #667; min-width: 46px; text-align: center; }
+#search { background: #222238; color: #ccd; border: 1px solid #3a3a56;
+  padding: 3px 8px; border-radius: 4px; font-size: 12px;
+  font-family: inherit; width: 165px; }
+#search:focus { outline: none; border-color: #6878c8; }
+#search::placeholder { color: #445; }
+.sep { width: 1px; height: 18px; background: #252538; margin: 0 2px; }
+#main { display: flex; flex: 1; overflow: hidden; }
+#wrap { flex: 1; overflow: hidden; cursor: grab; position: relative; background: #12121e; }
+#wrap.dragging { cursor: grabbing; }
+svg { display: block; }
+/* label zoom tiers */
+svg.z0 .ln, svg.z0 .ls { display: none; }
+svg.z1 .ls { display: none; }
+/* room appearance */
+.rh { transition: stroke 0.07s; }
+.rg:hover .rh { stroke: rgba(255,255,255,0.9) !important; stroke-width: 3 !important; }
+.rg.sel .rh { stroke: white !important; stroke-width: 4 !important; }
+.rg.dim { opacity: 0.1; }
+.ri { cursor: pointer; }
+/* sidebar */
+#sb { width: 252px; flex-shrink: 0; background: #181828;
+  border-left: 1px solid #252538; display: flex; flex-direction: column; }
+#sb.closed { display: none; }
+#sb-hdr { padding: 10px 12px 8px; background: #1e1e34; border-bottom: 1px solid #252538; }
+#sb-idx { font-size: 10px; color: #446; text-transform: uppercase; letter-spacing: 1px; }
+#sb-name { font-size: 18px; color: #e0e8ff; font-weight: bold; margin: 2px 0; }
+#sb-meta { font-size: 11px; color: #667; }
+#sb-badges { font-size: 16px; margin-top: 5px; letter-spacing: 3px; min-height: 22px; }
+#sb-body { flex: 1; overflow-y: auto; padding: 8px 12px; font-size: 12px; }
+#sb-body::-webkit-scrollbar { width: 5px; }
+#sb-body::-webkit-scrollbar-track { background: #181828; }
+#sb-body::-webkit-scrollbar-thumb { background: #333350; border-radius: 3px; }
+.sec { font-size: 10px; color: #4858a0; text-transform: uppercase; letter-spacing: 1.5px;
+  border-bottom: 1px solid #222238; padding-bottom: 3px; margin: 10px 0 5px; }
+.none { color: #334; font-size: 11px; padding: 2px 0; }
+.erow { display: flex; justify-content: space-between; padding: 2px 0; }
+.en { color: #9aaabb; flex: 1; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; font-size: 11px; }
+.ec { color: #5868b0; font-size: 11px; min-width: 28px; text-align: right; }
+#sb-copy { padding: 6px; margin: 6px 10px 10px; background: #1e1e34;
+  border: 1px solid #303050; border-radius: 5px; cursor: pointer;
+  font-size: 11px; color: #8898b8; text-align: center; font-family: inherit; width: calc(100% - 20px); }
+#sb-copy:hover { background: #252545; color: #aab8d0; }
+#sb-empty { flex: 1; display: flex; align-items: center; justify-content: center;
+  color: #334; font-size: 12px; text-align: center; line-height: 2; }
+/* tooltip */
+#tip { position: fixed; background: #1c1c30; border: 1px solid #3a3a58;
+  border-radius: 6px; padding: 8px 10px; font-size: 11px;
+  pointer-events: none; z-index: 200; opacity: 0; transition: opacity 0.07s;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.65); max-width: 260px; white-space: pre-line; }
+#tip.vis { opacity: 1; }
+#tip-name { font-size: 13px; font-weight: bold; color: #b0c0ff; margin-bottom: 3px; }
+#tip-size { color: #667; margin-bottom: 3px; }
+#tip-ents { color: #8899aa; }
+/* minimap */
+#mm-wrap { position: absolute; bottom: 12px; right: 12px; border: 1px solid #2a2a44;
+  border-radius: 5px; overflow: hidden; cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.6); }
+#mmv { position: absolute; top: 0; left: 0; pointer-events: none; }
+</style>
+</head><body>
+<div id="topbar">
+  <div id="title">🗺️ 10_Ruins_Lobby</div>
+  <div id="stats">1 rooms · all · scroll=zoom · drag=pan · click=details · F=search</div>
+</div>
+<div id="toolbar">
+  <button class="btn" id="btn-zi" title="Zoom in (+)">＋</button>
+  <span id="zdsp">100%</span>
+  <button class="btn" id="btn-zo" title="Zoom out (-)">－</button>
+  <button class="btn" id="btn-fit" title="Fit to window (0)">⟳ Fit</button>
+  <div class="sep"></div>
+  <button class="btn on" id="btn-grid">Grid</button>
+  <button class="btn on" id="btn-lbl">Labels</button>
+  <div class="sep"></div>
+  <input id="search" type="text" placeholder="Search rooms… (F)">
+  <div class="sep"></div>
+  <button class="btn on" id="btn-sb" title="Toggle detail panel">Panel</button>
+</div>
+<div id="main">
+  <div id="wrap">
+    <svg id="svg" width="1920" height="824" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="shadow">
+          <feDropShadow dx="1" dy="1" stdDeviation="1.2"
+            flood-color="#000" flood-opacity="0.9"/>
+        </filter>
+      </defs>
+      <rect width="100%" height="100%" fill="#12121e"/>
+      <g id="grid" stroke="#1e1e2c" stroke-width="1.5">
+        <line x1="0" y1="0" x2="1920" y2="0"/>
+    <line x1="0" y1="320" x2="1920" y2="320"/>
+    <line x1="0" y1="640" x2="1920" y2="640"/>
+    <line x1="0" y1="960" x2="1920" y2="960"/>
+    <line x1="0" y1="0" x2="0" y2="824"/>
+    <line x1="320" y1="0" x2="320" y2="824"/>
+    <line x1="640" y1="0" x2="640" y2="824"/>
+    <line x1="960" y1="0" x2="960" y2="824"/>
+    <line x1="1280" y1="0" x2="1280" y2="824"/>
+    <line x1="1600" y1="0" x2="1600" y2="824"/>
+    <line x1="1920" y1="0" x2="1920" y2="824"/>
+      </g>
+      <g id="rooms"><g class="rg" id="rg0"><rect class="rb" x="320" y="320" width="1280" height="184" fill="#c04040" fill-opacity="0.72" stroke="#5a5a7a" stroke-width="1.5" rx="4"/><rect class="rh" x="320" y="320" width="1280" height="184" fill="none" stroke="transparent" rx="4" pointer-events="none"/><text class="ln" x="960.0" y="419.0" text-anchor="middle" font-size="20" fill="white" font-family="monospace" font-weight="bold" filter="url(#shadow)">lobby_hub</text><text class="ls" x="960.0" y="448.0" text-anchor="middle" font-size="16" fill="#aab" font-family="monospace" filter="url(#shadow)">9e · 0t · 1280×184</text><rect class="ri" x="320" y="320" width="1280" height="184" fill="transparent" data-idx="0"/></g></g>
+    </svg>
+    <div id="mm-wrap">
+      <canvas id="mm"  width="180" height="110"></canvas>
+      <canvas id="mmv" width="180" height="110"></canvas>
+    </div>
+  </div>
+  <div id="sb">
+    <div id="sb-empty">← Click a room<br>to view details</div>
+    <div id="sb-hdr" style="display:none">
+      <div id="sb-idx"></div>
+      <div id="sb-name"></div>
+      <div id="sb-meta"></div>
+      <div id="sb-badges"></div>
+    </div>
+    <div id="sb-body" style="display:none"></div>
+    <button id="sb-copy" style="display:none">📋 Copy name</button>
+  </div>
+</div>
+<div id="tip">
+  <div id="tip-name"></div>
+  <div id="tip-size"></div>
+  <div id="tip-ents"></div>
+</div>
+<script>const ROOMS = [{"idx": 0, "name": "lobby_hub", "wx": 0, "wy": 0, "w": 1280, "h": 184, "sx": 320, "sy": 320, "color": "#c04040", "has_cp": false, "badges": [], "ent": 9, "trig": 0, "entities": [["MaggyHelper/SidMapEnterTrigger", 8], ["player", 1]], "triggers": []}];
+const SVG_W = 1920, SVG_H = 824;
+
+(function() {
+const wrap = document.getElementById('wrap');
+const svg  = document.getElementById('svg');
+const zdsp = document.getElementById('zdsp');
+const tip  = document.getElementById('tip');
+const sb   = document.getElementById('sb');
+const ZOOM_STEP = 1.25, MIN_Z = 0.04, MAX_Z = 12;
+let zoom = 1, panX = 0, panY = 0;
+let dragging = false, dragMoved = false, lx = 0, ly = 0;
+let selIdx = -1;
+
+// ── zoom / pan ────────────────────────────────────────────────────────────
+function fitToWindow() {
+  const ww = wrap.clientWidth, wh = wrap.clientHeight;
+  zoom = Math.min(ww / SVG_W, wh / SVG_H) * 0.93;
+  panX = (ww - SVG_W * zoom) / 2;
+  panY = (wh - SVG_H * zoom) / 2;
+}
+function clamp() {
+  const ww = wrap.clientWidth, wh = wrap.clientHeight, pad = 120;
+  panX = Math.min(panX, pad);
+  panY = Math.min(panY, pad);
+  panX = Math.max(panX, ww - SVG_W * zoom - pad);
+  panY = Math.max(panY, wh - SVG_H * zoom - pad);
+}
+function apply() {
+  svg.style.transform = `translate(${panX}px,${panY}px) scale(${zoom})`;
+  svg.style.transformOrigin = '0 0';
+  zdsp.textContent = Math.round(zoom * 100) + '%';
+  svg.className = zoom < 0.15 ? 'z0' : zoom < 0.4 ? 'z1' : 'z2';
+  drawMMViewport();
+}
+function zoomAt(cx, cy, f) {
+  const nz = Math.min(MAX_Z, Math.max(MIN_Z, zoom * f));
+  const s = nz / zoom;
+  panX = cx - s * (cx - panX);
+  panY = cy - s * (cy - panY);
+  zoom = nz; clamp(); apply();
+}
+fitToWindow(); apply();
+
+// ── mouse wheel ───────────────────────────────────────────────────────────
+wrap.addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = wrap.getBoundingClientRect();
+  zoomAt(e.clientX - r.left, e.clientY - r.top,
+         e.deltaY < 0 ? ZOOM_STEP : 1/ZOOM_STEP);
+}, {passive: false});
+
+// ── drag to pan ───────────────────────────────────────────────────────────
+// dragMoved is only true once the pointer has moved > 8px, preventing
+// accidental click suppression from normal hand tremor.
+wrap.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  dragging = true; dragMoved = false; lx = e.clientX; ly = e.clientY;
+  wrap.classList.add('dragging');
+});
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const dx = e.clientX - lx, dy = e.clientY - ly;
+  if (!dragMoved && Math.abs(dx) < 8 && Math.abs(dy) < 8) return; // ignore tremor
+  dragMoved = true;
+  panX += dx; panY += dy; lx = e.clientX; ly = e.clientY;
+  clamp(); apply();
+});
+window.addEventListener('mouseup', () => {
+  dragging = false; wrap.classList.remove('dragging');
+});
+
+// ── touch pinch/pan ───────────────────────────────────────────────────────
+let touches = {}, lastDist = null;
+wrap.addEventListener('touchstart', e => {
+  for (const t of e.changedTouches) touches[t.identifier] = {x: t.clientX, y: t.clientY};
+}, {passive: true});
+wrap.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    const t = e.touches[0], p = touches[t.identifier] || {x: t.clientX, y: t.clientY};
+    panX += t.clientX - p.x; panY += t.clientY - p.y;
+    touches[t.identifier] = {x: t.clientX, y: t.clientY};
+    clamp(); apply();
+  } else if (e.touches.length === 2) {
+    const [a, b] = e.touches;
+    const d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+    if (lastDist !== null) {
+      const r = wrap.getBoundingClientRect();
+      zoomAt((a.clientX + b.clientX)/2 - r.left,
+             (a.clientY + b.clientY)/2 - r.top, d/lastDist);
+    }
+    lastDist = d;
+    for (const t of e.touches) touches[t.identifier] = {x: t.clientX, y: t.clientY};
+  }
+}, {passive: false});
+wrap.addEventListener('touchend', e => {
+  for (const t of e.changedTouches) delete touches[t.identifier];
+  if (e.touches.length < 2) lastDist = null;
+}, {passive: true});
+
+// ── keyboard shortcuts ────────────────────────────────────────────────────
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === '=' || e.key === '+') zoomAt(wrap.clientWidth/2, wrap.clientHeight/2, ZOOM_STEP);
+  else if (e.key === '-')             zoomAt(wrap.clientWidth/2, wrap.clientHeight/2, 1/ZOOM_STEP);
+  else if (e.key === '0') { fitToWindow(); apply(); }
+  else if (e.key === 'Escape') { selectRoom(-1); }
+  else if (e.key === 'f' || e.key === 'F') { document.getElementById('search').focus(); }
+});
+
+// ── tooltip ───────────────────────────────────────────────────────────────
+const tipName = document.getElementById('tip-name');
+const tipSize = document.getElementById('tip-size');
+const tipEnts = document.getElementById('tip-ents');
+
+wrap.addEventListener('mousemove', e => {
+  let tx = e.clientX + 16, ty = e.clientY - 8;
+  if (tx + 270 > window.innerWidth) tx = e.clientX - 260;
+  tip.style.left = tx + 'px';
+  tip.style.top  = ty + 'px';
+});
+
+const roomsEl = document.getElementById('rooms');
+roomsEl.addEventListener('mouseover', e => {
+  const idx = e.target.dataset?.idx;
+  if (idx === undefined) { tip.classList.remove('vis'); return; }
+  const r = ROOMS[+idx];
+  tipName.textContent = ([...r.badges, r.name]).join(' ');
+  tipSize.textContent = r.w + ' × ' + r.h + ' px  (world ' + r.wx + ', ' + r.wy + ')';
+  const top3 = r.entities.slice(0, 3).map(([n, c]) => n + ': ' + c).join('  ·  ');
+  tipEnts.textContent = r.ent + ' entities · ' + r.trig + ' triggers' +
+                        (top3 ? '\n' + top3 : '');
+  tip.classList.add('vis');
+});
+roomsEl.addEventListener('mouseout', e => {
+  if (e.target.dataset?.idx !== undefined) tip.classList.remove('vis');
+});
+
+// ── room click / select ───────────────────────────────────────────────────
+roomsEl.addEventListener('click', e => {
+  if (dragMoved) return;
+  const idx = e.target.dataset?.idx;
+  if (idx === undefined) return;
+  selectRoom(+idx === selIdx ? -1 : +idx);
+});
+
+function getRG(i) { return document.getElementById('rg' + i); }
+
+function selectRoom(idx) {
+  if (selIdx >= 0) getRG(selIdx)?.classList.remove('sel');
+  selIdx = idx;
+  if (idx >= 0) {
+    getRG(idx)?.classList.add('sel');
+    showSidebar(ROOMS[idx]);
+  } else {
+    hideSidebar();
+  }
+}
+
+// ── sidebar ───────────────────────────────────────────────────────────────
+function showSidebar(r) {
+  document.getElementById('sb-empty').style.display = 'none';
+  document.getElementById('sb-hdr').style.display   = '';
+  document.getElementById('sb-body').style.display  = '';
+  document.getElementById('sb-copy').style.display  = '';
+  document.getElementById('sb-idx').textContent  = 'Room ' + (r.idx + 1);
+  document.getElementById('sb-name').textContent = r.name;
+  document.getElementById('sb-meta').textContent =
+      r.w + ' × ' + r.h + ' px  ·  (' + r.wx + ', ' + r.wy + ')';
+  document.getElementById('sb-badges').textContent = r.badges.join('  ');
+
+  let html = '<div class="sec">Entities (' + r.ent + ')</div>';
+  if (!r.entities.length) html += '<div class="none">—</div>';
+  for (const [n, c] of r.entities)
+    html += '<div class="erow"><span class="en" title="' + n + '">' + n +
+            '</span><span class="ec">' + c + '</span></div>';
+
+  html += '<div class="sec">Triggers (' + r.trig + ')</div>';
+  if (!r.triggers.length) html += '<div class="none">—</div>';
+  for (const [n, c] of r.triggers)
+    html += '<div class="erow"><span class="en" title="' + n + '">' + n +
+            '</span><span class="ec">' + c + '</span></div>';
+
+  document.getElementById('sb-body').innerHTML = html;
+}
+
+function hideSidebar() {
+  document.getElementById('sb-empty').style.display  = '';
+  document.getElementById('sb-hdr').style.display    = 'none';
+  document.getElementById('sb-body').style.display   = 'none';
+  document.getElementById('sb-copy').style.display   = 'none';
+}
+
+document.getElementById('sb-copy').addEventListener('click', () => {
+  if (selIdx < 0) return;
+  navigator.clipboard?.writeText(ROOMS[selIdx].name);
+  const btn = document.getElementById('sb-copy');
+  btn.textContent = '✓ Copied!';
+  setTimeout(() => { btn.textContent = '📋 Copy name'; }, 1500);
+});
+
+// ── search / filter ───────────────────────────────────────────────────────
+document.getElementById('search').addEventListener('input', e => {
+  const q = e.target.value.trim().toLowerCase();
+  ROOMS.forEach(r => {
+    const g = getRG(r.idx);
+    if (g) g.classList.toggle('dim', !!q && !r.name.toLowerCase().includes(q));
+  });
+});
+
+// ── toolbar buttons ───────────────────────────────────────────────────────
+document.getElementById('btn-zi').addEventListener('click', () =>
+  zoomAt(wrap.clientWidth/2, wrap.clientHeight/2, ZOOM_STEP));
+document.getElementById('btn-zo').addEventListener('click', () =>
+  zoomAt(wrap.clientWidth/2, wrap.clientHeight/2, 1/ZOOM_STEP));
+document.getElementById('btn-fit').addEventListener('click', () => { fitToWindow(); apply(); });
+
+document.getElementById('btn-grid').addEventListener('click', function() {
+  this.classList.toggle('on');
+  document.getElementById('grid').style.display = this.classList.contains('on') ? '' : 'none';
+});
+document.getElementById('btn-lbl').addEventListener('click', function() {
+  this.classList.toggle('on');
+  const v = this.classList.contains('on') ? '' : 'none';
+  document.querySelectorAll('.ln,.ls').forEach(el => el.style.display = v);
+});
+
+let sbOpen = true;
+document.getElementById('btn-sb').addEventListener('click', function() {
+  sbOpen = !sbOpen;
+  this.classList.toggle('on', sbOpen);
+  sb.classList.toggle('closed', !sbOpen);
+});
+
+// ── minimap ───────────────────────────────────────────────────────────────
+const mmC   = document.getElementById('mm');
+const mmCtx = mmC.getContext('2d');
+const mmV   = document.getElementById('mmv');
+const mmVCtx = mmV.getContext('2d');
+const MM_W = mmC.width, MM_H = mmC.height;
+const mmSX = MM_W / SVG_W, mmSY = MM_H / SVG_H;
+
+// Draw static room tiles once
+mmCtx.fillStyle = '#0e0e1a';
+mmCtx.fillRect(0, 0, MM_W, MM_H);
+for (const r of ROOMS) {
+  mmCtx.fillStyle = r.color + 'bb';
+  mmCtx.fillRect(r.sx * mmSX, r.sy * mmSY, Math.max(1, r.w * mmSX), Math.max(1, r.h * mmSY));
+  if (r.has_cp) {
+    mmCtx.strokeStyle = '#ffd700';
+    mmCtx.lineWidth = 0.5;
+    mmCtx.strokeRect(r.sx * mmSX, r.sy * mmSY, Math.max(1, r.w * mmSX), Math.max(1, r.h * mmSY));
+  }
+}
+
+function drawMMViewport() {
+  mmVCtx.clearRect(0, 0, MM_W, MM_H);
+  const ww = wrap.clientWidth, wh = wrap.clientHeight;
+  const vx = (-panX / zoom) * mmSX;
+  const vy = (-panY / zoom) * mmSY;
+  const vw2 = (ww / zoom) * mmSX;
+  const vh2 = (wh / zoom) * mmSY;
+  const cx = Math.max(0, vx), cy = Math.max(0, vy);
+  const cw = Math.min(vw2, MM_W - Math.max(0, vx));
+  const ch = Math.min(vh2, MM_H - Math.max(0, vy));
+  if (cw > 0 && ch > 0) {
+    mmVCtx.fillStyle = 'rgba(255,255,255,0.07)';
+    mmVCtx.fillRect(cx, cy, cw, ch);
+    mmVCtx.strokeStyle = 'rgba(255,255,255,0.75)';
+    mmVCtx.lineWidth = 1.5;
+    mmVCtx.strokeRect(cx, cy, cw, ch);
+  }
+}
+
+// Click minimap to pan
+mmC.addEventListener('click', e => {
+  const r2 = mmC.getBoundingClientRect();
+  const mx = (e.clientX - r2.left) / mmSX;
+  const my = (e.clientY - r2.top) / mmSY;
+  panX = wrap.clientWidth  / 2 - mx * zoom;
+  panY = wrap.clientHeight / 2 - my * zoom;
+  clamp(); apply();
+});
+
+drawMMViewport();
+})();
+</script>
+</body></html>

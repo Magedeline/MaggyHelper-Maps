@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/loenn-mcp/pcg_room_pool.schema.json",
+  "title": "Loenn MCP Weighted Room Pool",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tile_width": { "type": "integer", "minimum": 8, "maximum": 64, "default": 16 },
+        "tile_height": { "type": "integer", "minimum": 6, "maximum": 32, "default": 8 },
+        "room_style": {
+          "type": "string",
+          "description": "Optional visual style profile used for stylegrounds, room flags, and generated decor.",
+          "default": "normal"
+        },
+        "max_hazard_density": { "type": "number", "minimum": 0.0, "maximum": 1.0, "default": 0.16 },
+        "required_tags": {
+          "type": "array",
+          "description": "Tags that must appear at least once in the generated sequence.",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        },
+        "min_tag_counts": {
+          "type": "object",
+          "description": "Minimum number of rooms that should contain each tag.",
+          "additionalProperties": { "type": "integer", "minimum": 1 },
+          "default": {}
+        },
+        "excluded_adjacent_tag_pairs": {
+          "type": "array",
+          "description": "Disallow adjacency where previous room has pair[0] and next room has pair[1].",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "default": []
+        },
+        "late_game_tags": {
+          "type": "array",
+          "description": "Tags that are favored in late rooms and discouraged in early rooms.",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        },
+        "late_game_start_ratio": {
+          "type": "number",
+          "description": "Normalized point where late-game preference starts (0.0-1.0).",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.6
+        }
+      }
+    },
+    "archetypes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "layout", "difficulty", "tags"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "weight": { "type": "number", "minimum": 0.0, "default": 1.0 },
+          "difficulty": { "type": "integer", "minimum": 1, "maximum": 10 },
+          "tags": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "open_left": { "type": "boolean", "default": false },
+          "open_right": { "type": "boolean", "default": false },
+          "hazard_chars": {
+            "type": "string",
+            "description": "Characters treated as hazards in this archetype."
+          },
+          "layout": {
+            "type": "string",
+            "description": "Multiline map using Maple-like characters. Typical solid='3', spawn='P', refill='Q', checkpoint='C', berry='R'."
+          }
+        }
+      }
+    }
+  },
+  "required": ["archetypes"]
+}

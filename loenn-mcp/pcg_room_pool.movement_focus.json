@@ -1,0 +1,92 @@
+{
+  "$schema": "./pcg_room_pool.schema.json",
+  "meta": {
+    "tile_width": 16,
+    "tile_height": 8,
+    "room_style": "summit",
+    "max_hazard_density": 0.12,
+    "required_tags": ["checkpoint", "climb"],
+    "min_tag_counts": {
+      "dash": 2,
+      "movement": 4
+    },
+    "excluded_adjacent_tag_pairs": [
+      ["rest", "rest"],
+      ["climb", "climb"]
+    ],
+    "late_game_tags": ["hazard", "finale", "precision"],
+    "late_game_start_ratio": 0.65
+  },
+  "archetypes": [
+    {
+      "id": "movement_intro",
+      "weight": 2.2,
+      "difficulty": 1,
+      "tags": ["intro", "movement", "rest"],
+      "open_left": false,
+      "open_right": true,
+      "hazard_chars": "X",
+      "layout": "3333333333333333\n3              3\n3      R       3\n3              \n3   33         \n3              3\n3P             3\n3333333333333333"
+    },
+    {
+      "id": "dash_bridge",
+      "weight": 1.9,
+      "difficulty": 2,
+      "tags": ["dash", "movement"],
+      "open_left": true,
+      "open_right": true,
+      "hazard_chars": "X",
+      "layout": "3333333333333333\n3              3\n3    33        3\n      3        \n3        33    3\n3              3\n3      Q       3\n3333333333333333"
+    },
+    {
+      "id": "climb_column",
+      "weight": 1.7,
+      "difficulty": 2,
+      "tags": ["climb", "movement", "check"],
+      "open_left": true,
+      "open_right": true,
+      "hazard_chars": "X",
+      "layout": "3333333333333333\n3      3       3\n3      3        \n   33  3        \n3      3      33\n3      3       3\n3              3\n3333333333333333"
+    },
+    {
+      "id": "tempo_refill",
+      "weight": 1.6,
+      "difficulty": 3,
+      "tags": ["dash", "movement", "rest"],
+      "open_left": true,
+      "open_right": true,
+      "hazard_chars": "X",
+      "layout": "3333333333333333\n3              3\n3   33    33   3\n       Q        \n3   33    33   3\n3              3\n3              3\n3333333333333333"
+    },
+    {
+      "id": "checkpoint_breath",
+      "weight": 1.5,
+      "difficulty": 3,
+      "tags": ["checkpoint", "movement", "rest"],
+      "open_left": true,
+      "open_right": true,
+      "hazard_chars": "X",
+      "layout": "3333333333333333\n3              3\n3              3\n      C         \n3    33        3\n3              3\n3      R       3\n3333333333333333"
+    },
+    {
+      "id": "hazard_zipper",
+      "weight": 1.1,
+      "difficulty": 4,
+      "tags": ["hazard", "movement", "precision"],
+      "open_left": true,
+      "open_right": true,
+      "hazard_chars": "X",
+      "layout": "3333333333333333\n3   X      X   3\n3      33      3\n     X      X   \n3   33    33   3\n3 X          X 3\n3              3\n3333333333333333"
+    },
+    {
+      "id": "finale_lattice",
+      "weight": 0.8,
+      "difficulty": 5,
+      "tags": ["dash", "hazard", "finale", "precision"],
+      "open_left": true,
+      "open_right": false,
+      "hazard_chars": "X",
+      "layout": "3333333333333333\n3 X    33   X  3\n3   33    33   3\n      X      X 3\n3 33    33     3\n3   X       X C3\n3              3\n3333333333333333"
+    }
+  ]
+}

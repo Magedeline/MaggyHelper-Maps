@@ -1,0 +1,13 @@
+.vs/
+.venv/
+bin/
+obj/
+__pycache__/
+
+Code/
+Source/
+Graphics/
+Dialog/
+
+Maps/Maggy/Temp/
+.vscode/mcp.json

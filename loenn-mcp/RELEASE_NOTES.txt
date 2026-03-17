@@ -1,0 +1,77 @@
+loenn-mcp v1.1.0
+================
+
+Celeste map editor for AI agents — read, edit, analyze, and preview Celeste
+.bin map files directly from GitHub Copilot, Claude Desktop, or any MCP
+client. No Loenn installation required.
+
+
+INSTALL
+-------
+  pip install loenn-mcp
+
+
+WHAT'S INCLUDED
+---------------
+- 19 MCP tools across 5 categories:
+    Map Reading    — list_maps, read_map_overview, read_room, get_room_tiles
+    Map Editing    — add_entity, remove_entity, set_room_tiles, add_room,
+           remove_room, create_map, generate_starter_map
+    Entity Catalog — list_entity_definitions, get_entity_definition,
+                     list_trigger_definitions, list_effect_definitions
+    Analysis       — analyze_map, visualize_map_layout, preview_map_section
+    Rendering      — render_map_html (interactive HTML, zoom/pan/search)
+
+- generate_starter_map now supports:
+  Built-in starter templates (minimal/entity/route)
+  Custom room JSON templates in one call
+  Optional auto-linking of touching rooms via TeleportTrigger pairs
+
+- celeste_bin.py — pure-Python .bin parser, full read/write round-trip
+                   (no Loenn or Everest required)
+
+- preview_map.py — one-command HTML map preview that opens in the browser
+
+- Works with maps created by Loenn or Ahorn
+
+
+CONNECT TO GITHUB COPILOT (VS Code)
+------------------------------------
+Add to .vscode/mcp.json:
+
+  {
+    "servers": {
+      "loenn-mcp": {
+        "type": "stdio",
+        "command": "python",
+        "args": ["-m", "loenn_mcp.server"],
+        "env": { "LOENN_MCP_WORKSPACE": "${workspaceFolder}" }
+      }
+    }
+  }
+
+
+CONNECT TO CLAUDE DESKTOP
+--------------------------
+Add to claude_desktop_config.json:
+
+  {
+    "mcpServers": {
+      "loenn-mcp": {
+        "command": "python",
+        "args": ["-m", "loenn_mcp.server"],
+        "env": { "LOENN_MCP_WORKSPACE": "/path/to/your/mod" }
+      }
+    }
+  }
+
+
+REQUIREMENTS
+------------
+  Python 3.9+
+  fastmcp >= 3.0.0
+
+
+LICENSE
+-------
+  MIT — https://github.com/Maggy-Studio/loenn-mcp/blob/main/LICENSE

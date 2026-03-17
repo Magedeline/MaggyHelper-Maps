@@ -1,0 +1,489 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/loenn-mcp/metroidvania_graph.schema.json",
+  "title": "Loenn MCP Metroidvania Graph Spec",
+  "description": "Schema for a graph-first procedural map workflow that plans gated progression before emitting Celeste room JSON.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "package": { "type": "string", "default": "" },
+        "room_prefix": { "type": "string", "default": "" },
+        "tile_width": { "type": "integer", "minimum": 8, "maximum": 64, "default": 16 },
+        "tile_height": { "type": "integer", "minimum": 6, "maximum": 32, "default": 8 },
+        "room_style": { "type": "string", "default": "normal" },
+        "layout_mode": {
+          "type": "string",
+          "enum": ["grid", "zones-first", "critical-path-first"],
+          "default": "zones-first"
+        },
+        "auto_connect_adjacent": { "type": "boolean", "default": true },
+        "default_hazard_chars": { "type": "string", "default": "Xx^*~!" },
+        "seed": { "type": ["integer", "null"], "default": null }
+      }
+    },
+    "abilities": {
+      "type": "array",
+      "default": [],
+      "items": { "$ref": "#/$defs/ability" }
+    },
+    "items": {
+      "type": "array",
+      "default": [],
+      "items": { "$ref": "#/$defs/item" }
+    },
+    "locks": {
+      "type": "array",
+      "default": [],
+      "items": { "$ref": "#/$defs/lock" }
+    },
+    "zones": {
+      "type": "array",
+      "default": [],
+      "items": { "$ref": "#/$defs/zone" }
+    },
+    "room_templates": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/roomTemplate" }
+    },
+    "graph": { "$ref": "#/$defs/graphPlan" },
+    "placement_rules": { "$ref": "#/$defs/placementRules" },
+    "validation": { "$ref": "#/$defs/validation" },
+    "render_defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stylegrounds": { "$ref": "#/$defs/stylegrounds" },
+        "room_flags": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": ["string", "number", "integer", "boolean", "null"]
+          }
+        }
+      }
+    }
+  },
+  "required": ["room_templates", "graph"],
+  "$defs": {
+    "stringList": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "weightedString": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "weight": { "type": "number", "minimum": 0.0, "default": 1.0 }
+      }
+    },
+    "requirement": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ability"],
+          "properties": {
+            "ability": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["item"],
+          "properties": {
+            "item": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["flag"],
+          "properties": {
+            "flag": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["event"],
+          "properties": {
+            "event": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["tag"],
+          "properties": {
+            "tag": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["all"],
+          "properties": {
+            "all": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/requirement" }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["any"],
+          "properties": {
+            "any": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/requirement" }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["not"],
+          "properties": {
+            "not": { "$ref": "#/$defs/requirement" }
+          }
+        }
+      ]
+    },
+    "ability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "default": "" },
+        "kind": {
+          "type": "string",
+          "enum": ["movement", "combat", "utility", "story", "key"],
+          "default": "movement"
+        },
+        "starts_unlocked": { "type": "boolean", "default": false },
+        "upgrades": { "$ref": "#/$defs/stringList", "default": [] },
+        "equivalent_to_any": { "$ref": "#/$defs/stringList", "default": [] }
+      }
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "default": "" },
+        "grants_abilities": { "$ref": "#/$defs/stringList", "default": [] },
+        "sets_flags": { "$ref": "#/$defs/stringList", "default": [] },
+        "consumable": { "type": "boolean", "default": false },
+        "unique": { "type": "boolean", "default": true }
+      }
+    },
+    "lock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "requires"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "default": "" },
+        "requires": { "$ref": "#/$defs/requirement" },
+        "consumes_items": { "$ref": "#/$defs/stringList", "default": [] },
+        "sets_flags_on_open": { "$ref": "#/$defs/stringList", "default": [] }
+      }
+    },
+    "zone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "default": "" },
+        "tags": { "$ref": "#/$defs/stringList", "default": [] },
+        "style": { "type": "string", "default": "" },
+        "min_rooms": { "type": "integer", "minimum": 0, "default": 0 },
+        "max_rooms": { "type": "integer", "minimum": 0, "default": 0 },
+        "preferred_neighbors": { "$ref": "#/$defs/stringList", "default": [] },
+        "entry_requirements": {
+          "type": "array",
+          "default": [],
+          "items": { "$ref": "#/$defs/requirement" }
+        }
+      }
+    },
+    "exit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "side"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "side": {
+          "type": "string",
+          "enum": ["left", "right", "up", "down", "interior"]
+        },
+        "requires": {
+          "type": "array",
+          "default": [],
+          "items": { "$ref": "#/$defs/requirement" }
+        },
+        "lock_id": { "type": "string", "default": "" },
+        "one_way": { "type": "boolean", "default": false },
+        "connects_to_tags": { "$ref": "#/$defs/stringList", "default": [] },
+        "anchor": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "x": { "type": "integer", "minimum": 0 },
+            "y": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "rewardSlot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": {
+          "type": "string",
+          "enum": ["item", "checkpoint", "boss", "story", "collectible"],
+          "default": "item"
+        },
+        "allowed_items": { "$ref": "#/$defs/stringList", "default": [] },
+        "anchor": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "x": { "type": "integer", "minimum": 0 },
+            "y": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "roomTemplate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "layout", "difficulty", "tags", "exits"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "zone": { "type": "string", "default": "" },
+        "weight": { "type": "number", "minimum": 0.0, "default": 1.0 },
+        "difficulty": { "type": "integer", "minimum": 1, "maximum": 10 },
+        "tags": { "$ref": "#/$defs/stringList" },
+        "layout": {
+          "type": "string",
+          "description": "Multiline Maple-like room layout. Typical solid='3', spawn='P', checkpoint='C', berry='R'."
+        },
+        "hazard_chars": { "type": "string", "default": "Xx^*~!" },
+        "supports_beats": { "$ref": "#/$defs/stringList", "default": [] },
+        "entrance_requirements": {
+          "type": "array",
+          "default": [],
+          "items": { "$ref": "#/$defs/requirement" }
+        },
+        "exits": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/exit" }
+        },
+        "reward_slots": {
+          "type": "array",
+          "default": [],
+          "items": { "$ref": "#/$defs/rewardSlot" }
+        },
+        "entities": {
+          "type": "array",
+          "default": [],
+          "items": { "type": "object" }
+        },
+        "fgdecals": {
+          "type": "array",
+          "default": [],
+          "items": { "type": "object" }
+        },
+        "bgdecals": {
+          "type": "array",
+          "default": [],
+          "items": { "type": "object" }
+        },
+        "room_flags": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": ["string", "number", "integer", "boolean", "null"]
+          }
+        }
+      }
+    },
+    "beat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": {
+          "type": "string",
+          "enum": ["start", "ability", "lock", "checkpoint", "boss", "objective", "goal", "shortcut"]
+        },
+        "zone": { "type": "string", "default": "" },
+        "requires": {
+          "type": "array",
+          "default": [],
+          "items": { "$ref": "#/$defs/requirement" }
+        },
+        "grants_item": { "type": "string", "default": "" },
+        "grants_ability": { "type": "string", "default": "" },
+        "opens_lock": { "type": "string", "default": "" },
+        "allowed_room_tags": { "$ref": "#/$defs/stringList", "default": [] },
+        "preferred_templates": { "$ref": "#/$defs/stringList", "default": [] },
+        "critical": { "type": "boolean", "default": true }
+      }
+    },
+    "graphPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "goal", "beats"],
+      "properties": {
+        "start": { "type": "string", "minLength": 1 },
+        "goal": { "type": "string", "minLength": 1 },
+        "room_budget": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "min": { "type": "integer", "minimum": 1 },
+            "target": { "type": "integer", "minimum": 1 },
+            "max": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "critical_path_length": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "min": { "type": "integer", "minimum": 1 },
+            "target": { "type": "integer", "minimum": 1 },
+            "max": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "branch_budget": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "side_paths": { "type": "integer", "minimum": 0, "default": 0 },
+            "optional_reward_rooms": { "type": "integer", "minimum": 0, "default": 0 },
+            "shortcuts": { "type": "integer", "minimum": 0, "default": 0 },
+            "loops": { "type": "integer", "minimum": 0, "default": 0 }
+          }
+        },
+        "zone_order": {
+          "type": "array",
+          "default": [],
+          "items": { "$ref": "#/$defs/weightedString" }
+        },
+        "beats": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/beat" }
+        },
+        "allow_backtracking": { "type": "boolean", "default": true },
+        "allow_softlocks": { "type": "boolean", "default": false },
+        "prefer_revisitable_hubs": { "type": "boolean", "default": true },
+        "hub_room_tags": { "$ref": "#/$defs/stringList", "default": [] }
+      }
+    },
+    "placementRules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "required_tags": { "$ref": "#/$defs/stringList", "default": [] },
+        "min_tag_counts": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": { "type": "integer", "minimum": 1 }
+        },
+        "excluded_adjacent_tag_pairs": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "type": "string", "minLength": 1 }
+          }
+        },
+        "late_game_tags": { "$ref": "#/$defs/stringList", "default": [] },
+        "late_game_start_ratio": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.6
+        },
+        "max_hazard_density": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.16
+        },
+        "forbid_duplicate_templates_within": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 2
+        },
+        "prefer_zone_locality": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 5.0,
+          "default": 1.0
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "simulate_progression": { "type": "boolean", "default": true },
+        "require_goal_reachable": { "type": "boolean", "default": true },
+        "require_all_critical_beats_reachable": { "type": "boolean", "default": true },
+        "forbid_unreachable_rewards": { "type": "boolean", "default": false },
+        "forbid_ability_deadlocks": { "type": "boolean", "default": true },
+        "forbid_consumable_lock_exhaustion": { "type": "boolean", "default": true },
+        "emit_solver_trace": { "type": "boolean", "default": true }
+      }
+    },
+    "stylegroundLayer": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "name": { "type": "string" },
+        "texture": { "type": "string" }
+      }
+    },
+    "stylegrounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "backgrounds": {
+          "type": "array",
+          "default": [],
+          "items": { "$ref": "#/$defs/stylegroundLayer" }
+        },
+        "foregrounds": {
+          "type": "array",
+          "default": [],
+          "items": { "$ref": "#/$defs/stylegroundLayer" }
+        }
+      }
+    }
+  }
+}

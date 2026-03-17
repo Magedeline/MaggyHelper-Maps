@@ -1,0 +1,68 @@
+{
+  "stylegrounds": {
+    "backgrounds": [
+      {
+        "name": "parallax",
+        "texture": "bgs/02/bg0",
+        "blendMode": "alphablend",
+        "loopX": true,
+        "loopY": true,
+        "scrollX": 0.1,
+        "scrollY": 0.05,
+        "x": 0,
+        "y": 0,
+        "color": "ffffff",
+        "alpha": 1.0,
+        "flipX": false,
+        "flipY": false,
+        "instantIn": false,
+        "instantOut": false
+      }
+    ],
+    "foregrounds": []
+  },
+  "rooms": [
+    {
+      "name": "custom_start",
+      "x": 0,
+      "y": 0,
+      "layout": "3333333333333333\n3              3\n3      R       3\n3              3\n3   Q          3\n3              3\n3P             3\n3333333333333333",
+      "entities": [
+        {
+          "name": "booster",
+          "x": 72,
+          "y": 24,
+          "red": false
+        }
+      ],
+      "fgdecals": [
+        {
+          "texture": "maggy/generic/grass_a",
+          "x": 96,
+          "y": 40
+        }
+      ],
+      "bgdecals": [
+        {
+          "texture": "maggy/9_beyond_summit/cloud_a",
+          "x": 56,
+          "y": 8
+        }
+      ]
+    },
+    {
+      "name": "custom_next",
+      "x": 128,
+      "y": 0,
+      "layout": "3333333333333333\n3              3\n3              3\n               3\n3          C   3\n3              3\n3              3\n3333333333333333",
+      "windPattern": "Left",
+      "fgdecals": [
+        {
+          "texture": "maggy/9_beyond_summit/SummitFlag00",
+          "x": 16,
+          "y": 16
+        }
+      ]
+    }
+  ]
+}

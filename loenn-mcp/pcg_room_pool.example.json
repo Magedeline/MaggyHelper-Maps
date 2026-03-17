@@ -1,0 +1,80 @@
+{
+  "$schema": "./pcg_room_pool.schema.json",
+  "meta": {
+    "tile_width": 16,
+    "tile_height": 8,
+    "room_style": "normal",
+    "max_hazard_density": 0.14,
+    "required_tags": ["checkpoint"],
+    "min_tag_counts": {
+      "hazard": 2
+    },
+    "excluded_adjacent_tag_pairs": [
+      ["rest", "rest"]
+    ],
+    "late_game_tags": ["hazard", "finale"],
+    "late_game_start_ratio": 0.6
+  },
+  "archetypes": [
+    {
+      "id": "intro_spawn",
+      "weight": 2.4,
+      "difficulty": 1,
+      "tags": ["intro", "rest"],
+      "open_left": false,
+      "open_right": true,
+      "hazard_chars": "X",
+      "layout": "3333333333333333\n3              3\n3      R       3\n3              \n3         Q     \n3              3\n3P             3\n3333333333333333"
+    },
+    {
+      "id": "dash_intro",
+      "weight": 1.8,
+      "difficulty": 2,
+      "tags": ["dash", "intro"],
+      "open_left": true,
+      "open_right": true,
+      "hazard_chars": "X",
+      "layout": "3333333333333333\n3              3\n3      33       \n      3         \n3   3333        3\n3              3\n3              3\n3333333333333333"
+    },
+    {
+      "id": "climb_check",
+      "weight": 1.4,
+      "difficulty": 2,
+      "tags": ["climb", "check"],
+      "open_left": true,
+      "open_right": true,
+      "hazard_chars": "X",
+      "layout": "3333333333333333\n3      3       3\n3      3        \n   333 3        \n3      3       3\n3      3       3\n3              3\n3333333333333333"
+    },
+    {
+      "id": "hazard_rhythm",
+      "weight": 1.1,
+      "difficulty": 3,
+      "tags": ["hazard", "rhythm"],
+      "open_left": true,
+      "open_right": true,
+      "hazard_chars": "X",
+      "layout": "3333333333333333\n3      X       3\n3   X      X    \n      33       \n3 X       X    3\n3   33         3\n3              3\n3333333333333333"
+    },
+    {
+      "id": "checkpoint_room",
+      "weight": 1.6,
+      "difficulty": 3,
+      "tags": ["checkpoint", "rest"],
+      "open_left": true,
+      "open_right": true,
+      "hazard_chars": "X",
+      "layout": "3333333333333333\n3              3\n3              3\n      C         \n3              3\n3      Q       3\n3              3\n3333333333333333"
+    },
+    {
+      "id": "final_push",
+      "weight": 0.9,
+      "difficulty": 4,
+      "tags": ["dash", "hazard", "finale"],
+      "open_left": true,
+      "open_right": false,
+      "hazard_chars": "X",
+      "layout": "3333333333333333\n3    X      X  3\n3 3333   3333  3\n        X      3\n3   33     33  3\n3 X      X     3\n3             C3\n3333333333333333"
+    }
+  ]
+}
